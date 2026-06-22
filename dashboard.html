@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retro Sci-Fi System Monitor</title>
+    <style>
+        :root {
+            --neon-green: #39ff14;
+            --dark-green: #002200;
+            --bg-color: #050b05;
+            --dim-green: #006600;
+            --alert-red: #ff3333;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Courier New', Courier, monospace;
+            user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--neon-green);
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            padding: 10px;
+            display: grid;
+            grid-template-rows: auto 1fr auto;
+            gap: 10px;
+            text-shadow: 0 0 4px rgba(57, 255, 20, 0.5);
+        }
+
+        body::before {
+            content: " ";
+            display: block;
+            position: fixed;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 100;
+            background-size: 100% 4px, 6px 100%;
+            pointer-events: none;
+        }
+
+        .panel {
+            border: 1px solid var(--neon-green);
+            padding: 10px;
+            background-color: rgba(0, 20, 0, 0.3);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        header {
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            gap: 10px;
+            align-items: center;
+        }
+
+        main {
+            display: grid;
+            grid-template-columns: 280px 1fr 340px;
+            gap: 10px;
+            min-height: 0;
+            height: 100%;
+        }
+
+        footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid var(--neon-green);
+            padding-top: 8px;
+            font-size: 12px;
+        }
+
+        h2 {
+            font-size: 13px;
+            letter-spacing: 2px;
+            margin-bottom: 6px;
+            border-bottom: 1px dashed var(--neon-green);
+            padding-bottom: 3px;
+            text-transform: uppercase;
+        }
+
+        .flex-col { display: flex; flex-direction: column; gap: 5px; min-height: 0; }
+
+        .status-indicators {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 5px;
+        }
+        .indicator {
+            border: 1px solid var(--dim-green);
+            padding: 3px;
+            text-align: center;
+            font-size: 11px;
+        }
+        .indicator.active {
+            background-color: var(--dim-green);
+            color: var(--bg-color);
+            font-weight: bold;
+        }
+
+        .globe-box {
+            height: 100px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 1px dashed var(--dim-green);
+            margin: 5px 0;
+            position: relative;
+        }
+        .globe {
+            width: 65px;
+            height: 65px;
+            border: 1px solid var(--neon-green);
+            border-radius: 50%;
+            position: relative;
+            animation: spin 8s linear infinite;
+        }
+        .globe::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 25%; width: 50%; height: 100%;
+            border-left: 1px dashed var(--neon-green);
+            border-right: 1px dashed var(--neon-green);
+            border-radius: 50%;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .input-container {
+            margin-top: auto;
+            border-top: 1px dashed var(--neon-green);
+            padding-top: 6px;
+        }
+        .input-wrapper {
+            display: flex;
+            border: 1px solid var(--neon-green);
+            background: transparent;
+            margin-bottom: 5px;
+        }
+        .terminal-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--neon-green);
+            padding: 6px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 11px;
+            outline: none;
+            user-select: text;
+        }
+        .terminal-btn {
+            background: var(--dim-green);
+            border: none;
+            color: var(--bg-color);
+            font-weight: bold;
+            padding: 0 10px;
+            cursor: pointer;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 11px;
+        }
+
+        .graph-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 100%;
+            min-height: 0;
+        }
+
+        .bar-graph {
+            display: flex;
+            align-items: flex-end;
+            height: 70px;
+            gap: 4px;
+            border-bottom: 1px solid var(--neon-green);
+            padding-bottom: 2px;
+        }
+        .bar {
+            flex: 1;
+            background-color: var(--neon-green);
+            height: 50%;
+            transition: height 0.15s ease;
+        }
+
+        .alert-banner {
+            color: var(--alert-red);
+            font-weight: bold;
+            font-size: 15px;
+            text-align: center;
+            letter-spacing: 2px;
+            margin: 4px 0;
+            min-height: 20px;
+            text-shadow: 0 0 8px rgba(255, 51, 51, 0.7);
+            text-transform: uppercase;
+        }
+
+        .hardware-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            margin: 4px 0;
+        }
+        .metric-box {
+            border: 1px solid var(--dim-green);
+            padding: 6px;
+            font-size: 11px;
+        }
+        .metric-val {
+            font-size: 15px;
+            font-weight: bold;
+            margin-top: 2px;
+        }
+
+        .letter-row {
+            display: flex;
+            justify-content: space-around;
+            margin: 4px 0;
+        }
+        .node {
+            width: 24px;
+            height: 24px;
+            border: 1px solid var(--neon-green);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .data-feed {
+            font-size: 11px;
+            line-height: 1.4;
+            overflow-y: scroll;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            flex: 1;
+        }
+        .data-feed::-webkit-scrollbar { display: none; }
+
+        .feed-line {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .btn-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 4px;
+            margin-bottom: 6px;
+        }
+        .grid-btn {
+            border: 1px solid var(--neon-green);
+            font-size: 10px;
+            padding: 4px 2px;
+            text-align: center;
+            background: transparent;
+            color: var(--neon-green);
+        }
+
+        .log-matrix {
+            border: 1px solid var(--dim-green);
+            padding: 6px;
+            font-size: 10px;
+            height: 65px;
+            overflow: hidden;
+            line-height: 1.3;
+            color: var(--dim-green);
+            margin: 4px 0;
+        }
+
+        /* NEW EXPANDED EMAIL FORM BLOCK FILLING BOTTOM SPACE */
+        .email-intercept-panel {
+            border: 1px dashed var(--neon-green);
+            padding: 8px;
+            background: rgba(0, 10, 0, 0.4);
+            margin-top: auto;
+        }
+        .email-form-row {
+            display: flex;
+            gap: 5px;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="panel">
+        <div>SYS_REF: 7837/98 // ONLINE</div>
+        <div style="text-align: center; font-weight: bold; letter-spacing: 3px; color: #ffffff;" id="changing-greetings">INITIALIZING ANAND SYSTEM...</div>
+        <div style="text-align: right;" id="timestamp">00:00:00</div>
+    </header>
+
+    <main>
+        <div class="panel flex-col">
+            <h2>ARRAY SECTORS</h2>
+            <div class="status-indicators">
+                <div class="indicator active">01</div>
+                <div class="indicator">02</div>
+                <div class="indicator active">03</div>
+                <div class="indicator">04</div>
+                <div class="indicator">05</div>
+                <div class="indicator active">06</div>
+                <div class="indicator">07</div>
+                <div class="indicator active">08</div>
+                <div class="indicator">09</div>
+            </div>
+            
+            <div style="margin-top: 5px; font-size: 11px;">
+                <p>> COSAE7/B6F [STABLE]</p>
+                <p>> 191DB6/83A [ROUTED]</p>
+                <p style="color: var(--dim-green);">> READY FOR INPUT...</p>
+            </div>
+
+            <div class="globe-box">
+                <div class="globe"></div>
+                <span style="position: absolute; bottom: 3px; font-size: 9px;">GEOMETRIC MATRIX</span>
+            </div>
+
+            <div class="log-matrix" id="left-sublog"></div>
+
+            <div class="input-container">
+                <h2 style="font-size: 11px; margin-bottom: 4px; border: none;">[ LOG INTERCEPT SYSTEM ]</h2>
+                <div class="input-wrapper">
+                    <input type="text" id="cmd-input" class="terminal-input" placeholder="Type name [text] here..." autocomplete="off">
+                    <button id="send-btn" class="terminal-btn">SEND</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel graph-container">
+            <div>
+                <h2>SYSTEM FREQUENCY OSCILLATION</h2>
+                <div class="bar-graph" id="live-graph"></div>
+            </div>
+
+            <div id="red-alert-banner" class="alert-banner"></div>
+
+            <div>
+                <h2>CORE DEVICE METRICS</h2>
+                <div class="hardware-grid">
+                    <div class="metric-box">
+                        <div>[ THERMAL_CORE ]</div>
+                        <div class="metric-val" id="phone-temp">36.4°C</div>
+                    </div>
+                    <div class="metric-box">
+                        <div>[ CPU_CLOCK ]</div>
+                        <div class="metric-val" id="cpu-load">2.42 GHz</div>
+                    </div>
+                    <div class="metric-box">
+                        <div>[ RAM_ALLOC ]</div>
+                        <div class="metric-val" id="ram-usage">64.1%</div>
+                    </div>
+                    <div class="metric-box">
+                        <div>[ STORAGE_SYS ]</div>
+                        <div class="metric-val">78.2%</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="letter-row" id="node-row">
+                <div class="node">S</div><div class="node">W</div><div class="node">E</div><div class="node">A</div>
+                <div class="node">T</div><div class="node">L</div><div class="node">O</div><div class="node">L</div>
+            </div>
+
+            <div class="email-intercept-panel">
+                <h2 style="font-size: 11px; margin-bottom: 2px; border: none; color: #ffffff;">[ SMTP GMAIL DISPATCH MATRIX ]</h2>
+                <div class="email-form-row">
+                    <input type="email" id="email-target" class="terminal-input" style="border: 1px solid var(--dim-green); padding: 4px;" placeholder="Target recipient email..." autocomplete="off">
+                </div>
+                <div class="email-form-row">
+                    <input type="text" id="email-msg" class="terminal-input" style="border: 1px solid var(--dim-green); padding: 4px;" placeholder="Message string payload..." autocomplete="off">
+                    <button id="email-btn" class="terminal-btn">ROUTE</button>
+                </div>
+            </div>
+
+            <div style="border: 1px solid var(--dim-green); padding: 6px; font-size: 11px; margin-top: 5px;">
+                <p style="text-align: center; margin-bottom: 2px;">[ SCHEMATIC DIAGRAM OVERRIDE ]</p>
+                <p>+ DIRECT_RECIPROCATION: ACTIVE (94.2%)</p>
+            </div>
+        </div>
+
+        <div class="panel flex-col">
+            <div class="btn-grid">
+                <div class="grid-btn">TRA</div><div class="grid-btn">BNI</div><div class="grid-btn">ODB</div><div class="grid-btn">ATV</div>
+                <div class="grid-btn">FIL</div><div class="grid-btn">ETR</div><div class="grid-btn">GET</div><div class="grid-btn">202</div>
+                <div class="grid-btn">SUP</div><div class="grid-btn">CLR</div><div class="grid-btn">FIL</div><div class="grid-btn">TNK</div>
+            </div>
+            <h2>DATA FEED</h2>
+            <div class="data-feed" id="terminal-feed"></div>
+        </div>
+    </main>
+
+    <footer>
+        <div>QTY - LONG [0.492]</div>
+        <div>CALL - LINE [STBY]</div>
+        <div>OFF - MKT [SYS_OK]</div>
+    </footer>
+
+    <script>
+        const graph = document.getElementById('live-graph');
+        const barCount = 34;
+        for (let i = 0; i < barCount; i++) {
+            const bar = document.createElement('div');
+            bar.classList.add('bar');
+            graph.appendChild(bar);
+        }
+
+        function updateGraph() {
+            const bars = document.querySelectorAll('.bar');
+            bars.forEach(bar => {
+                const height = Math.floor(Math.random() * 85) + 15;
+                bar.style.height = `${height}%`;
+            });
+        }
+        setInterval(updateGraph, 180);
+
+        const tempEl = document.getElementById('phone-temp');
+        const cpuEl = document.getElementById('cpu-load');
+        const ramEl = document.getElementById('ram-usage');
+
+        function updateHardwareMetrics() {
+            const randomTemp = (35 + Math.random() * 4.5).toFixed(1);
+            tempEl.innerText = `${randomTemp}°C`;
+            const randomCpu = (1.8 + Math.random() * 1.1).toFixed(2);
+            cpuEl.innerText = `${randomCpu} GHz`;
+            const randomRam = (62 + Math.random() * 5.5).toFixed(1);
+            ramEl.innerText = `${randomRam}%`;
+        }
+        setInterval(updateHardwareMetrics, 1500);
+
+        const words = ["SWEATLOL", "COMPUTER", "MATRIXOS", "CRITERIA", "TERMINAL"];
+        const nodes = document.querySelectorAll('.node');
+        function cycleLetters() {
+            const randomWord = words[Math.floor(Math.random() * words.length)];
+            nodes.forEach((node, index) => {
+                node.innerText = randomWord[index] || "X";
+            });
+        }
+        setInterval(cycleLetters, 3000);
+
+        const greetingsList = [
+            "WELCOME BACK, OPERATOR ANAND",
+            "ANAND MAINFRAME // SECURE LINK ESTABLISHED",
+            "ACCESS GRANTED TO PROTOCOL_ANAND",
+            "SYSTEM ONLINE // GREETINGS ANAND",
+            "RUNNING DYNAMIC DIAGNOSTICS: HOST=ANAND",
+            "ENCRYPTED CHANNEL ATTACHED // USERID: ANAND"
+        ];
+        const greetingsBox = document.getElementById('changing-greetings');
+        function cycleGreetings() {
+            const randomGreet = greetingsList[Math.floor(Math.random() * greetingsList.length)];
+            greetingsBox.innerText = randomGreet;
+        }
+        setInterval(cycleGreetings, 4000);
+        cycleGreetings();
+
+        const sublog = document.getElementById('left-sublog');
+        function updateSublog() {
+            if (sublog.children.length > 4) { sublog.removeChild(sublog.firstChild); }
+            const logLine = document.createElement('div');
+            logLine.innerText = `chk_sector_${Math.floor(Math.random()*99)}.. ok [${Math.random().toString(16).substr(2,4)}]`;
+            sublog.appendChild(logLine);
+        }
+        setInterval(updateSublog, 900);
+
+        const feedKeywords = ["NDI.DRILLING", "X-RAY_SCAN", "RADAR_ECHO", "HELIUM_VALVE", "HYDROGEN_LVL", "TEMP_CORE", "VOLTAGE_FLUX", "TELEMETRY", "OVERRIDE_EXEC", "BUFFER_CLEARED", "MEM_DUMP", "NET_ROUTE"];
+        const feed = document.getElementById('terminal-feed');
+        
+        function appendFeedLine(customText = null) {
+            if (feed.children.length > 400) {
+                feed.removeChild(feed.firstChild);
+            }
+            const line = document.createElement('div');
+            line.classList.add('feed-line');
+            
+            if (customText) {
+                line.innerText = customText;
+                if(customText.startsWith(">>") || customText.includes("SUCCESS")) {
+                    line.style.color = "#ffffff"; 
+                    line.style.textShadow = "0 0 6px #ffffff";
+                } else if(customText.includes("GMAIL") || customText.includes("YOU ARE IN")) {
+                    line.style.color = "var(--alert-red)";
+                    line.style.textShadow = "0 0 6px var(--alert-red)";
+                }
+            } else {
+                const keyword = feedKeywords[Math.floor(Math.random() * feedKeywords.length)];
+                const value = (Math.random() * 1000).toFixed(4);
+                const hex = Math.random().toString(16).substr(2, 6).toUpperCase();
+                line.innerText = `> ${keyword} ... [${value}] 0x${hex}`;
+            }
+            feed.appendChild(line);
+            feed.scrollTop = feed.scrollHeight;
+        }
+        
+        let passiveFeedInterval = setInterval(() => appendFeedLine(), 600);
+
+        // DELAYED EXTRA VISIBLE FLOOD ENGINE (Exactly 250 visible rolling lines)
+        const cmdInput = document.getElementById('cmd-input');
+        const sendBtn = document.getElementById('send-btn');
+        const alertBanner = document.getElementById('red-alert-banner');
+
+        function runCascade(baseText, alternativeAlertName = null) {
+            clearInterval(passiveFeedInterval);
+            let count = 0;
+            const targetLinesCount = 250;
+
+            const floodInterval = setInterval(() => {
+                const randomHex = Math.random().toString(16).substr(2, 8).toUpperCase();
+                const randomSector = Math.floor(Math.random() * 9999);
+                
+                let customLine = `> [LOG_INDEX_${count}] ... SYNCING CORE MATRIX SECTOR ${randomSector}`;
+                
+                if (count === 125 && alternativeAlertName) {
+                    customLine = `>> [ALERT] GMAIL HEADER ATTACHED: "YOU ARE IN [${alternativeAlertName.toUpperCase()}]"`;
+                } else if (count === 249) {
+                    customLine = `>> [SUCCESS] PIPELINE PROCESSING COMPLETED SUCCESSFULLY.`;
+                } else {
+                    const phrases = [
+                        `> TRACING ROUTE TO SMTP SERVER NODE ... STATUS: STABLE`,
+                        `> DATA PACKET DEPLOYED VIA ARG // "${baseText.toUpperCase().slice(0,15)}"`,
+                        `> CONFIG_HEX_HASH: 0x${randomHex} AUTHENTICATED`,
+                        `> VERIFYING ROUTING INTEGRITY SECTOR ... PASS_OK`,
+                        `> STACK BUFFER STREAM INJECTION LINE LEVEL_${count}`
+                    ];
+                    customLine = phrases[Math.floor(Math.random() * phrases.length)];
+                }
+
+                appendFeedLine(customLine);
+                count++;
+
+                if (count >= targetLinesCount) {
+                    clearInterval(floodInterval);
+                    passiveFeedInterval = setInterval(() => appendFeedLine(), 600);
+                }
+            }, 35); // Slowed down from 10ms to 35ms so each line rolls past clearly and cleanly!
+        }
+
+        function triggerFlood() {
+            const userText = cmdInput.value.trim();
+            if (!userText) return;
+            cmdInput.value = '';
+
+            let currentTargetName = "SYSTEM";
+            const lowerText = userText.toLowerCase();
+
+            if (lowerText.startsWith("name")) {
+                const nameArg = userText.slice(4).trim();
+                if (nameArg.length > 0) {
+                    currentTargetName = nameArg;
+                    alertBanner.innerText = `⚠ YOU ARE IN ${nameArg} ⚠`;
+                    appendFeedLine(`>> CRITICAL DATA INTERCEPT: ACCESSING UNIT [${nameArg.toUpperCase()}]`);
+                } else {
+                    alertBanner.innerText = `⚠ YOU ARE IN SYSTEM ⚠`;
+                }
+            } else {
+                appendFeedLine(`>> INTERCEPTING PAYLOAD: "${userText.toUpperCase()}"`);
+            }
+
+            runCascade(userText, currentTargetName);
+        }
+
+        sendBtn.addEventListener('click', triggerFlood);
+        cmdInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') triggerFlood(); });
+
+        // GMAIL DISPATCH FLOW
+        const emailTarget = document.getElementById('email-target');
+        const emailMsg = document.getElementById('email-msg');
+        const emailBtn = document.getElementById('email-btn');
+
+        emailBtn.addEventListener('click', () => {
+            const targetValue = emailTarget.value.trim();
+            const msgValue = emailMsg.value.trim();
+            if(!targetValue || !msgValue) return;
+
+            emailTarget.value = '';
+            emailMsg.value = '';
+
+            // Pull active name alert context state safely
+            let extractedName = alertBanner.innerText.replace(/⚠/g, "").replace("YOU ARE IN", "").trim() || "ANAND";
+
+            appendFeedLine(`>> INITIATING SMTP GMAIL LINK TO RECIPIENT: [${targetValue.toUpperCase()}]`);
+            appendFeedLine(`>> MESSAGE BODY PAYLOAD: "${msgValue.toUpperCase()}"`);
+            
+            runCascade(`GMAIL_RELAY_TO_${targetValue}`, extractedName);
+        });
+
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('timestamp').innerText = now.toTimeString().split(' ')[0];
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+    </script>
+</body>
+</html>
+
